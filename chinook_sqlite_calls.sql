@@ -2,28 +2,28 @@
 --Provide a query showing Customers (just their full names, customer ID and country) 
 --who are not in the US.
 
-SELECT c.FirstName as "First Name", c.LastName as "Last Name", c.CustomerId as "Customer ID", c.Country as "Country"
-FROM Customer c 
-WHERE c.Country != "USA";
+SELECT c."FirstName" as "First Name", c."LastName" as "Last Name", c."CustomerId" as "Customer ID", c."Country" as "Country"
+FROM "Customer" c 
+WHERE c."Country" != 'USA';
 
 
 
 --`brazil_customers.sql`: 
 --Provide a query only showing the Customers from Brazil.
 
-SELECT c.FirstName as "First Name", c.LastName as "Last Name", c.CustomerId as "Customer ID", c.Country as "Country"
-From Customer c
-WHERE c.Country == "Brazil";
+SELECT c."FirstName" as "First Name", c."LastName" as "Last Name", c."CustomerId" as "Customer ID", c."Country" as "Country"
+FROM "Customer" c 
+WHERE c."Country" = 'Brazil';
 
 
 --brazil_customers_invoices.sql`: 
 --Provide a query showing the Invoices of customers who are from Brazil. 
 --The resultant table should show the customer's full name, Invoice ID, Date of the invoice and billing country.
 
-SELECT c.FirstName as "First Name", c.LastName as "Last Name", i.InvoiceId as "Invoice ID", i.InvoiceDate as "Invoice Date", i.BillingCountry as "Billing Country"
-From Customer c, Invoice i
-WHERE c.Country == "Brazil"
-AND i.CustomerID == c.CustomerID;
+SELECT c."FirstName" as "First Name", c."LastName" as "Last Name", i."InvoiceId" as "Invoice ID", i."InvoiceDate" as "Invoice Date", i."BillingCountry" as "Billing Country"
+From "Customer" c, "Invoice" i
+WHERE c."Country" = 'Brazil'
+AND i."CustomerID" = c."CustomerID";
 
 
 
@@ -31,23 +31,39 @@ AND i.CustomerID == c.CustomerID;
 --`sales_agents.sql`: 
 --Provide a query showing only the Employees who are Sales Agents.
 
-SELECT  e.FirstName as "First Name", e.LastName as "Last Name" 
-FROM Employee e 
-WHERE e.Title == "Sales Support Agent";
+SELECT  e."FirstName" as "First Name", e."LastName" as "Last Name" 
+FROM "Employee" e 
+WHERE e."Title" = "Sales Support Agent";
 
-
-
+SELECT  e."Title" as "Title" 
+FROM "Employee" e ;
 
 --`unique_invoice_countries.sql`: 
 --Provide a query showing a unique/distinct list of billing countries from the Invoice table.
 
-SELECT i.BillingCountry as "Individual Billing Countries"
-FROM Invoice i
-GROUP BY i.BillingCountry;
+SELECT i."BillingCountry" as "Individual Billing Countries"
+FROM "Invoice" i
+GROUP BY i."BillingCountry";
+
+
+--'Count invoices for each country. Please use GROUP BY ':
+
+SELECT i."BillingCountry" as "Individual Billing Countries", count (*) AS num_invoice_each_country
+FROM "Invoice" i
+ GROUP BY "BillingCountry" 
+ORDER BY num_invoice_each_country DESC;
+
+--'Show total invoice value for each Customer       
+
+SELECT c."FirstName" as "First Name",  i."CustomerId" as "customerId" , SUM(i."Total") as "Sales"
+FROM "Invoice" i, "Customer" c
+GROUP BY i."CustomerId" , c."FirstName";
 
 
 
-
+SELECT i."BillingCountry" as "Country", 
+FROM "Invoice" i 
+GROUP BY i."BillingCountry";
 
 --`sales_agent_invoices.sql`: 
 --Provide a query that shows the invoices associated with each sales agent. 
@@ -60,6 +76,16 @@ AND e.EmployeeId == 3
 AND i.CustomerId == c.CustomerId;
 
 
+--Count invoices for each year. 
+
+SELECT EXTRACT (YEAR From  i."InvoiceDate")as "Year" , SUM(i."Total") as "Sales" 
+FROM "Invoice" i
+ GROUP BY "Year" ;
+
+
+SELECT c."FirstName" as "First Name",  i."CustomerId" as "customerId" , count (*) AS num_invoice_per_each_customer
+FROM "Invoice" i, "Customer" c
+GROUP BY i."CustomerId" , c."FirstName"
 
 
 
@@ -72,22 +98,22 @@ FROM Employee e, Customer c, Invoice i;
 --`total_invoices_{year}.sql`: 
 --How many Invoices were there in 2009 and 2011?
 
-SELECT SUBSTR(i.InvoiceDate, 0, 5) as "Year", count(i.InvoiceId) as "Number Of Invoices"
-FROM Invoice i
-WHERE i.InvoiceDate  LIKE '2009%' 
-OR i.InvoiceDate LIKE '2011%'
-GROUP BY SUBSTR(i.InvoiceDate, 0, 5);
+SELECT EXTRACT (YEAR From  i."InvoiceDate")as "Year" , count(i."InvoiceId") as "Number Of Invoices"
+FROM "Invoice" i
+WHERE EXTRACT (YEAR From  i."InvoiceDate")  LIKE '2009'
+OR EXTRACT (YEAR From  i."InvoiceDate") LIKE '2011%'
+GROUP BY "Year";
 
 
 --total_sales_{year}.sql
 --What are the respective total sales for each of those years?
 
 
-SELECT SUBSTR(i.InvoiceDate, 0, 5) as "Year", SUM(i.[Total]) as "Total"
-FROM Invoice i
-WHERE i.InvoiceDate  LIKE '2009%' 
-OR i.InvoiceDate LIKE '2011%'
-GROUP BY SUBSTR(i.InvoiceDate, 0, 5);
+SELECT SUBSTR(i."InvoiceDate", 0, 5) as "Year", SUM(i.["Total"]) as "Total"
+FROM "Invoice" i
+WHERE i."InvoiceDate"  LIKE '2009%' 
+OR i."InvoiceDate" LIKE '2011%'
+GROUP BY SUBSTR(i."InvoiceDate", 0, 5);
 
 
 --invoice_37_line_item_count.sql
@@ -101,9 +127,12 @@ WHERE il.InvoiceId == 37;
 --Looking at the InvoiceLine table, provide a query that COUNTs the number of line items for each Invoice. 
   --HINT: GROUP BY
 
-  SELECT il.InvoiceId as "Invoice ID" , COUNT(il.InvoiceLineId) as "Line Items"
-  FROM InvoiceLine il
-  GROUP BY il.InvoiceId;
+  SELECT il."InvoiceId" as "Invoice ID" , COUNT(il."InvoiceLineId") as "Line Items"
+  FROM "InvoiceLine" il
+  GROUP BY il."InvoiceId"
+  ORDER BY COUNT(il."InvoiceLineId") desc
+  Limit 7
+  ;
   
   
   
@@ -118,12 +147,20 @@ WHERE t.TrackId == il.TrackId;
 --line_item_track_artist.sql
 --Provide a query that includes the purchased track name AND artist name with each invoice line item.
 
-SELECT t.Name as "Track" , art.Name as "Artist", il.InvoiceId as "Invoice Id", il.InvoiceLineId as "Invoice Line Item"
-FROM Track t, InvoiceLine il, Album al, Artist art
-WHERE il.TrackId == t.TrackId
-AND al.AlbumId == t.AlbumId
-AND al.ArtistId == art.ArtistId;
+SELECT t."Name" as "Track" , art."Name" as "Artist", il."InvoiceId" as "Invoice Id", il."InvoiceLineId" as "Invoice Line Item"
+FROM "Track" t, "InvoiceLine" il, "Album" al, "Artist" art
+WHERE il."TrackId" = t."TrackId"
+AND al."AlbumId" = t."AlbumId"
+AND al."ArtistId"= art."ArtistId";
 
+-- '.	Show Artist name with the biggest number of tracks.'
+SELECT art."Name" as "Artist" ,COUNT(al."ArtistId") as "Number of Tracks" 
+FROM "Track" t, "Artist" art, "Album" as al 
+where t."AlbumId" = al."AlbumId"
+and al."ArtistId"= art."ArtistId" 
+GROUP BY art."Name"
+ORDER BY COUNT(al."ArtistId") desc
+Limit 1;
 
 --country_invoices.sql
 -- Provide a query that shows the # of invoices per country. 
@@ -175,12 +212,12 @@ GROUP BY i.InvoiceId;
 --sales_agent_total_sales.sql 
 -- Provide a query that shows total sales made by each sales agent.
 
-SELECT e.FirstName || " " || e.LastName as "Sales Agent", SUM( i.Total) as "Total Sales"
-FROM Employee e, Invoice i, Customer c 
-WHERE i.CustomerId == c.CustomerId
-AND c.SupportRepId == e.EmployeeId
-AND e.Title == "Sales Support Agent"
-GROUP BY e.FirstName || " " || e.LastName;
+SELECT concat(e."FirstName", ' ', e."LastName") as "Sales Agent", i."InvoiceId" as "InvoiceID"
+FROM "Employee" e, "Invoice" i, "Customer" c 
+WHERE i."CustomerId" = c."CustomerId"
+AND c."SupportRepId" = e."EmployeeId"
+AND e."Title" = 'Sales Support Agent'
+GROUP BY concat(e."FirstName", ' ', e."LastName"), i."InvoiceId" ;
 
 
 --top_2009_agent.sql
@@ -217,13 +254,15 @@ FROM Employee e, Customer c
 WHERE c.SupportRepId == e.EmployeeId
 GROUP BY e.FirstName || " " || e.LastName ;
 
+
+
 --sales_per_country.sql 
 -- Provide a query that shows the total sales per country.
 
 
-SELECT i.BillingCountry as "Country", SUM(i.Total) as "Sales"
-FROM Invoice i 
-GROUP BY i.BillingCountry;
+SELECT i."BillingCountry" as "Country", SUM(i."Total") as "Sales"
+FROM "Invoice" i 
+GROUP BY i."BillingCountry";
 
 
 --top_country.sql
